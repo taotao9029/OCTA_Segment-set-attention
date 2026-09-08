@@ -1,122 +1,49 @@
-# Stroke GPU Classification Project
+# Temporal Attention Network for OCTA Stroke Classification
 
-本项目用于从小鼠眼底/OCTA 视频中提取血管微循环事件特征，并训练/推理脑卒中二分类模型。当前整理后的主线流程是：视频取清晰帧 -> 血管分割 -> 视频事件流生成 -> 血管区域事件过滤 -> 7组核心血流特征提取 ->  Attention网络 。
+[中文说明 / Chinese overview](#中文说明)
 
-## 当前目录结构
+This repository implements a temporal-attention neural classifier for OCTA stroke classification. Event-derived vascular descriptors are encoded and reweighted by attention to model discriminative temporal microcirculation patterns. The code preserves fixed split manifests, threshold provenance, checkpoint hashes and runtime metadata for reproducible research.
 
-```
-.
-├── README.md                   # 
-├── get_feature.py              # 当前事件流特征提取函数
-├── seg.py                      # 眼底血管分割
-├── event_filter.py             # 血管区域事件流过滤
-├── Video2Events.py             # 视频提取事件流
-├── train_group_out.py          # 训练group_out整体流程
-├── train_attention.py          # 训练五折整体流程
-├── requirements.txt            # 运行所需要的环境
-├── data/                       # 当前数据存放位置
-├── log/                        # 当前训练日志存放位置
-├── output                      # 当前结果存放位置
-└── 
-```
+## Architecture
 
-## 备份目录说明
+`video -> event stream -> vessel filtering -> interpretable event features -> classifier`
 
 
 
+The experimental protocol includes full-feature training and controlled ablations. Original-only predictions and test-time augmentation (TTA) are reported separately; thresholds are selected from inner OOF predictions only.
 
-```text
-mean_speed
-std_speed
-mean_thd
-std_thd
-pulse_freq
-pulse_amp
-event_density
-```
-
-其中：
-
-- `mean_speed`, `std_speed`：基于窗口内事件匹配和 RANSAC 估算血流速度。
-- `mean_thd`, `std_thd`：频域谐波失真指标，用于反映搏动波形异常。
-- `pulse_freq`, `pulse_amp`：通过事件计数频谱估算主导搏动频率和幅度。
-- `event_density`：单位时间事件密度。
+## Installation
 
 
-## 训练整体流程
 
-当前血管视频转换成事件流：
+Python 3.10+ is recommended. GPU is optional for these models, but a consistent locked environment should be used for publication results.
 
-```bash
-python Video2Events.py 
-```
+## Data format
 
-脚本会执行：
+Event CSV files must contain , , , and , arranged as  (control) and  (stroke). Keep original and augmented views under a stable . The fixed five-fold split is read from ; never regenerate folds during evaluation.
 
-将整段视频转换为临时事件流 。
+## Reproducible workflow
 
 
-当前血管分割区域：
 
-```bash
-python seg.py
-```
+Review the YAML/config snapshot before training. Outer-test data are used once for final reporting; model selection, epoch selection and threshold selection use inner folds only.
 
-脚本会执行：
+## Outputs
 
-得到每一个视频的血管分割区域 。
+ contains standardized predictions, , , , , , , , and . Report ROC-AUC, PR-AUC, accuracy, balanced accuracy, F1, sensitivity and specificity.
 
+## Ablation and external validation
 
-当前视频流的血管区域过滤：
+Feature ablations are defined by the training script and must use the same split manifest and threshold policy as the full model. For date-based external validation, provide  and run the group-out entry point without using held-out dates for tuning.
 
-```bash
-python event_filter.py
-```
+## 中文说明
 
-脚本会执行：
+本项目分别实现 OCTA 事件特征时序注意力网络，用于脑卒中二分类。流程包括事件流生成、血管区域过滤、特征提取、固定五折嵌套验证、特征消融和日期外部验证，并输出完整运行清单与哈希记录。
 
-过滤得到每一个事件流的的血管区域 。
+## Citation
 
+Please cite the associated study and report the model version, split manifest, configuration hash and Git commit.
 
-7组核心血流特征提取：
+## Copyright
 
-```bash
-python get_feature.py
-```
-
-脚本会执行：
-
-过滤得到每一个事件流的的血管区域 。
-
-
-RF的五折整体流程：
-
-```bash
-python train_attention.py
-```
-
-脚本会执行：
-
-五折训练的每个epoch的结果以及训练过程 。
-
-
-RF的group_out整体流程：
-
-```bash
-python train_group_out.py
-```
-
-脚本会执行：
-
-RF的group_out的训练结果以及中间结果 。
-
-## 主要依赖
-
-项目有独立的 `requirements.txt`，请执行 pip install -r requirements.txt 安装当前环境：
-
-
-## 维护建议
-
-1. 后续新增实验脚本建议放入 `experiments/`，不要继续堆在项目根目录。
-2. 生成图片、临时 CSV、解释结果建议统一输出到 `outputs/`。
-
+Copyright (c) 2025 Taotao9029. All rights reserved.
